@@ -1,0 +1,11 @@
+{
+  "eventName": "COMPANY OUTING 2026",
+  "updatedAt": "2026-06-11T00:00:00Z",
+  "players": [
+    { "name": "Matt",   "smashWins": 2, "magicWins": 1, "pickleballWins": 1 },
+    { "name": "Sarah",  "smashWins": 0, "magicWins": 2, "pickleballWins": 0 },
+    { "name": "Dev",    "smashWins": 3, "magicWins": 0, "pickleballWins": 2 },
+    { "name": "Jordan", "smashWins": 1, "magicWins": 0, "pickleballWins": 1 },
+    { "name": "Alex",   "smashWins": 0, "magicWins": 1, "pickleballWins": 0 }
+  ]
+}

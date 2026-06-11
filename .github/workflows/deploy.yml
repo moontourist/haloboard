@@ -1,0 +1,56 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Publish
+        run: dotnet publish OutingLeaderboard.csproj -c Release -o publish
+
+      # Project pages are served from /<repo>/, so the base href must match.
+      # User/org pages (<user>.github.io repo) stay at /.
+      - name: Rewrite base href
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          if [[ "$REPO_NAME" != *.github.io ]]; then
+            sed -i "s|<base href=\"/\" />|<base href=\"/${REPO_NAME}/\" />|" publish/wwwroot/index.html
+          fi
+
+      # Pages runs Jekyll by default, which drops the _framework folder.
+      - name: Add .nojekyll
+        run: touch publish/wwwroot/.nojekyll
+
+      # SPA fallback so deep links like /admin survive a refresh on Pages.
+      - name: Add 404.html fallback
+        run: cp publish/wwwroot/index.html publish/wwwroot/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish/wwwroot
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

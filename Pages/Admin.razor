@@ -1,0 +1,191 @@
+@page "/admin"
+@inject ScoreStore Store
+
+<PageTitle>ADMIN CONSOLE</PageTitle>
+
+<div class="crt">
+    <div class="admin-wrap">
+        <pre class="admin-title">@_titleArt</pre>
+
+        @if (_data is null)
+        {
+            <p class="admin-note">LOADING SCOREBOARD ...</p>
+        }
+        else
+        {
+            <div class="panel">
+                <div class="panel-head">[ EVENT ]</div>
+                <label class="cfg-label">EVENT NAME
+                    <input class="tin wide" @bind="_data.EventName" @bind:after="SaveLocal" />
+                </label>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">[ PLAYERS ]  SMASH +1 | PICKLEBALL +1 | MAGIC (COMMANDER) +3</div>
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>PLAYER</th><th>SMASH</th><th>MAGIC</th><th>PICKLE</th><th>PTS</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in _data.Players)
+                        {
+                            <tr @key="p">
+                                <td><input class="tin" @bind="p.Name" @bind:after="SaveLocal" /></td>
+                                <td>
+                                    <button class="tbtn" @onclick="() => Bump(p, x => x.SmashWins--)">-</button>
+                                    <span class="num">@p.SmashWins</span>
+                                    <button class="tbtn" @onclick="() => Bump(p, x => x.SmashWins++)">+</button>
+                                </td>
+                                <td>
+                                    <button class="tbtn" @onclick="() => Bump(p, x => x.MagicWins--)">-</button>
+                                    <span class="num">@p.MagicWins</span>
+                                    <button class="tbtn" @onclick="() => Bump(p, x => x.MagicWins++)">+</button>
+                                </td>
+                                <td>
+                                    <button class="tbtn" @onclick="() => Bump(p, x => x.PickleballWins--)">-</button>
+                                    <span class="num">@p.PickleballWins</span>
+                                    <button class="tbtn" @onclick="() => Bump(p, x => x.PickleballWins++)">+</button>
+                                </td>
+                                <td class="num pts">@p.Points</td>
+                                <td><button class="tbtn danger" @onclick="() => RemovePlayer(p)">[DEL]</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="btn-row">
+                    <input class="tin" placeholder="NEW PLAYER NAME" @bind="_newName" />
+                    <button class="tbtn" @onclick="AddPlayer">[+ ADD PLAYER]</button>
+                </div>
+                <p class="admin-note">@_localStatus</p>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">[ PUBLISH :: GITHUB SYNC ]</div>
+                <p class="admin-note">
+                    Edits above apply instantly on this device — a dashboard tab in this browser picks
+                    them up within 5s. To publish for everyone, commit scores.json back to the repo:
+                    Pages redeploys in about a minute. Use a fine-grained personal access token limited
+                    to this repo with Contents read/write. The token is stored only in this browser.
+                </p>
+                <div class="cfg-grid">
+                    <label class="cfg-label">OWNER <input class="tin" @bind="_cfg.Owner" /></label>
+                    <label class="cfg-label">REPO <input class="tin" @bind="_cfg.Repo" /></label>
+                    <label class="cfg-label">BRANCH <input class="tin" @bind="_cfg.Branch" /></label>
+                    <label class="cfg-label">FILE PATH <input class="tin wide" @bind="_cfg.Path" /></label>
+                    <label class="cfg-label">TOKEN <input class="tin wide" type="password" @bind="_cfg.Token" /></label>
+                </div>
+                <div class="btn-row">
+                    <button class="tbtn" @onclick="SaveConfig">[SAVE CONFIG]</button>
+                    <button class="tbtn push" @onclick="Push" disabled="@_pushing">@(_pushing ? "[PUSHING...]" : "[PUSH TO GITHUB]")</button>
+                    <button class="tbtn danger" @onclick="DiscardLocal">[DISCARD LOCAL EDITS]</button>
+                </div>
+                @if (_log.Count > 0)
+                {
+                    <pre class="admin-log">@string.Join("\n", _log)</pre>
+                }
+            </div>
+        }
+
+        <a class="admin-link" href="">&lt;&lt; BACK TO LEADERBOARD</a>
+    </div>
+</div>
+
+@code {
+    private ScoreBoardData? _data;
+    private GitHubConfig _cfg = new();
+    private string _newName = "";
+    private string _localStatus = "";
+    private bool _pushing;
+    private readonly List<string> _log = new();
+
+    private static readonly string _titleArt = string.Join("\n",
+        "+===========================+",
+        "|    :: ADMIN CONSOLE ::    |",
+        "+===========================+");
+
+    protected override async Task OnInitializedAsync()
+    {
+        _data = await Store.LoadAsync() ?? new ScoreBoardData();
+        _cfg = await Store.LoadConfigAsync();
+    }
+
+    private async Task SaveLocal()
+    {
+        if (_data is null) return;
+        await Store.SaveLocalAsync(_data);
+        _localStatus = $"SAVED LOCALLY @ {DateTime.Now:HH:mm:ss} — push to publish for everyone";
+    }
+
+    private async Task Bump(PlayerEntry p, Action<PlayerEntry> change)
+    {
+        change(p);
+        p.SmashWins = Math.Max(0, p.SmashWins);
+        p.MagicWins = Math.Max(0, p.MagicWins);
+        p.PickleballWins = Math.Max(0, p.PickleballWins);
+        await SaveLocal();
+    }
+
+    private async Task AddPlayer()
+    {
+        if (_data is null) return;
+        var name = _newName.Trim();
+        if (name.Length == 0) return;
+        if (_data.Players.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            _localStatus = $"PLAYER '{name.ToUpperInvariant()}' ALREADY EXISTS";
+            return;
+        }
+        _data.Players.Add(new PlayerEntry { Name = name });
+        _newName = "";
+        await SaveLocal();
+    }
+
+    private async Task RemovePlayer(PlayerEntry p)
+    {
+        if (_data is null) return;
+        _data.Players.Remove(p);
+        await SaveLocal();
+    }
+
+    private async Task SaveConfig()
+    {
+        await Store.SaveConfigAsync(_cfg);
+        Log("config saved (token stays in this browser)");
+    }
+
+    private async Task DiscardLocal()
+    {
+        await Store.ClearLocalAsync();
+        _data = await Store.LoadAsync() ?? new ScoreBoardData();
+        _localStatus = "LOCAL EDITS DISCARDED — reloaded published scores";
+    }
+
+    private async Task Push()
+    {
+        if (_data is null) return;
+        if (string.IsNullOrWhiteSpace(_cfg.Owner) || string.IsNullOrWhiteSpace(_cfg.Repo) ||
+            string.IsNullOrWhiteSpace(_cfg.Token))
+        {
+            Log("ERROR: owner, repo, and token are required");
+            return;
+        }
+        _pushing = true;
+        try
+        {
+            await Store.SaveConfigAsync(_cfg);
+            Log($"pushing to {_cfg.Owner}/{_cfg.Repo}@{_cfg.Branch} ...");
+            StateHasChanged();
+            Log(await Store.PushToGitHubAsync(_data, _cfg));
+        }
+        catch (Exception ex)
+        {
+            Log($"ERROR: {ex.Message}");
+        }
+        finally
+        {
+            _pushing = false;
+        }
+    }
+
+    private void Log(string line) => _log.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {line}");
+}

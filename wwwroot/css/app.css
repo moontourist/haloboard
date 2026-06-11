@@ -1,0 +1,420 @@
+/* HALO (usehalo.com) brand palette on a dark terminal */
+:root {
+    --bg: #071018;
+    --bg-soft: #0c1a26;
+    --bg-panel: #102433;
+    --fg: #d7e4ee;
+    --grey: #6b8298;
+    --grey-dim: #2c4356;
+    --halo: #00a2e0;
+    --teal: #00d2c4;
+    --ice: #8ed1fc;
+    --purple: #5951ff;
+    --red: #f8384b;
+    --glow: #eaf6ff;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+    min-height: 100vh;
+}
+
+pre {
+    margin: 0;
+    font-family: inherit;
+}
+
+/* ---------- boot screen (pre-WASM) ---------- */
+
+.boot-screen {
+    color: var(--halo);
+    padding: 2rem;
+    font-size: 14px;
+    text-shadow: 0 0 6px rgba(0, 162, 224, 0.5);
+}
+
+.boot-blink {
+    animation: blink 0.8s steps(1) infinite;
+}
+
+/* ---------- CRT shell ---------- */
+
+.crt {
+    position: relative;
+    min-height: 100vh;
+    padding: 1.5rem 1rem 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    animation: crt-flicker 4s infinite;
+}
+
+/* scanlines */
+.crt::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.2) 3px,
+        rgba(0, 0, 0, 0) 4px
+    );
+    z-index: 10;
+}
+
+/* vignette + cool blue glow */
+.crt::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center,
+        rgba(0, 162, 224, 0.05) 0%,
+        rgba(0, 0, 0, 0) 60%,
+        rgba(0, 0, 0, 0.45) 100%);
+    z-index: 11;
+}
+
+@keyframes crt-flicker {
+    0%, 100% { opacity: 1; }
+    97%      { opacity: 1; }
+    97.5%    { opacity: 0.93; }
+    98%      { opacity: 1; }
+    99%      { opacity: 0.97; }
+}
+
+/* ---------- banner ---------- */
+
+.banner {
+    color: var(--halo);
+    text-shadow: 0 0 8px rgba(0, 162, 224, 0.5), 0 0 22px rgba(0, 162, 224, 0.25);
+    font-size: clamp(5px, 1.15vw, 14px);
+    line-height: 1.1;
+    text-align: center;
+    animation: glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+    0%, 100% { text-shadow: 0 0 8px rgba(0, 162, 224, 0.5), 0 0 22px rgba(0, 162, 224, 0.25); }
+    50%      { text-shadow: 0 0 12px rgba(0, 162, 224, 0.7), 0 0 34px rgba(0, 162, 224, 0.4); }
+}
+
+.subtitle {
+    margin-top: 0.6rem;
+    color: var(--ice);
+    font-size: clamp(8px, 1.4vw, 14px);
+    letter-spacing: 0.1em;
+}
+
+/* ---------- champion / halo ---------- */
+
+.champion {
+    margin-top: 1.4rem;
+    text-align: center;
+}
+
+.halo-ring {
+    display: inline-block;
+    color: var(--glow);
+    text-shadow: 0 0 10px rgba(0, 162, 224, 0.9), 0 0 30px rgba(0, 162, 224, 0.5),
+                 0 0 60px rgba(0, 210, 196, 0.35);
+    font-size: clamp(9px, 1.6vw, 16px);
+    line-height: 1.15;
+    animation: halo-hover 2.6s ease-in-out infinite;
+}
+
+@keyframes halo-hover {
+    0%, 100% { transform: translateY(0)    rotate(-2deg); opacity: 0.95; }
+    50%      { transform: translateY(-8px) rotate(2deg);  opacity: 1; }
+}
+
+.champion-name {
+    margin-top: 0.4rem;
+    color: var(--glow);
+    font-size: clamp(11px, 2vw, 20px);
+    letter-spacing: 0.15em;
+    text-shadow: 0 0 10px rgba(0, 162, 224, 0.7);
+    animation: glow-pulse-halo 2.6s ease-in-out infinite;
+}
+
+@keyframes glow-pulse-halo {
+    0%, 100% { text-shadow: 0 0 8px rgba(0, 162, 224, 0.55); }
+    50%      { text-shadow: 0 0 20px rgba(0, 162, 224, 1), 0 0 40px rgba(0, 210, 196, 0.5); }
+}
+
+/* ---------- score table ---------- */
+
+.board {
+    margin-top: 1.4rem;
+    font-size: clamp(7px, 1.35vw, 15px);
+    line-height: 1.25;
+}
+
+.table-line {
+    color: var(--fg);
+    white-space: pre;
+}
+
+.table-line.header {
+    color: var(--teal);
+}
+
+.table-line.frame {
+    color: var(--grey-dim);
+}
+
+/* each (re)created row slides in — retriggers when a player's rank changes */
+.table-line.row {
+    animation: row-in 0.5s ease-out;
+}
+
+@keyframes row-in {
+    0%   { opacity: 0; transform: translateX(-18px); background: var(--bg-panel); }
+    60%  { background: var(--bg-panel); }
+    100% { opacity: 1; transform: translateX(0); background: transparent; }
+}
+
+/* leader row: inverse video in halo blue */
+.table-line.leader {
+    color: var(--bg);
+    background: var(--halo);
+    text-shadow: none;
+    animation: row-in 0.5s ease-out, leader-shimmer 2.6s ease-in-out infinite;
+}
+
+@keyframes leader-shimmer {
+    0%, 100% { background: var(--halo); box-shadow: 0 0 14px rgba(0, 162, 224, 0.4); }
+    50%      { background: #2dbdf2;     box-shadow: 0 0 28px rgba(0, 162, 224, 0.7); }
+}
+
+/* ---------- status line ---------- */
+
+.status {
+    margin-top: 1.6rem;
+    color: var(--grey);
+    font-size: clamp(8px, 1.3vw, 13px);
+    letter-spacing: 0.08em;
+}
+
+.status .live {
+    color: var(--teal);
+    animation: blink 1.6s steps(1) infinite;
+}
+
+.cursor {
+    animation: blink 0.9s steps(1) infinite;
+}
+
+@keyframes blink {
+    0%, 49%  { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+
+/* ---------- admin console ---------- */
+
+.admin-wrap {
+    width: min(94vw, 880px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.admin-title {
+    color: var(--halo);
+    text-shadow: 0 0 8px rgba(0, 162, 224, 0.5);
+    align-self: center;
+}
+
+.panel {
+    width: 100%;
+    margin-top: 1.2rem;
+    padding: 1rem;
+    border: 1px solid var(--grey-dim);
+    background: var(--bg-soft);
+}
+
+.panel-head {
+    color: var(--halo);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.8rem;
+}
+
+.tin {
+    background: var(--bg);
+    border: 1px solid var(--grey-dim);
+    color: var(--fg);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 0.35rem 0.5rem;
+    min-width: 0;
+}
+
+.tin.wide {
+    width: 100%;
+}
+
+.tin:focus {
+    outline: none;
+    border-color: var(--halo);
+    box-shadow: 0 0 6px rgba(0, 162, 224, 0.45);
+}
+
+.tin::placeholder {
+    color: var(--grey-dim);
+}
+
+.tbtn {
+    background: var(--bg);
+    border: 1px solid var(--grey);
+    color: var(--halo);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+}
+
+.tbtn:hover:enabled {
+    background: var(--halo);
+    color: var(--bg);
+}
+
+.tbtn:disabled {
+    color: var(--grey-dim);
+    border-color: var(--grey-dim);
+    cursor: wait;
+}
+
+.tbtn.push {
+    color: var(--teal);
+    border-color: var(--teal);
+}
+
+.tbtn.push:hover:enabled {
+    background: var(--teal);
+    color: var(--bg);
+}
+
+.tbtn.danger {
+    color: var(--red);
+    border-color: var(--red);
+}
+
+.tbtn.danger:hover:enabled {
+    background: var(--red);
+    color: var(--bg);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.9rem;
+}
+
+.admin-table th {
+    color: var(--teal);
+    text-align: left;
+    font-weight: normal;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid var(--grey-dim);
+}
+
+.admin-table td {
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px dashed rgba(44, 67, 86, 0.6);
+    white-space: nowrap;
+}
+
+.num {
+    display: inline-block;
+    min-width: 2.5ch;
+    text-align: center;
+}
+
+.num.pts {
+    color: var(--teal);
+}
+
+.btn-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.cfg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.7rem;
+    margin-bottom: 0.9rem;
+}
+
+.cfg-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    color: var(--grey);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+}
+
+.admin-note {
+    color: var(--grey);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.admin-log {
+    margin-top: 0.9rem;
+    color: var(--teal);
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.admin-link {
+    margin-top: 1.4rem;
+    color: var(--teal);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+}
+
+.admin-link:hover {
+    color: var(--halo);
+    text-decoration: underline;
+}
+
+/* ---------- error UI ---------- */
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-soft);
+    color: var(--red);
+    border-top: 1px solid var(--red);
+    padding: 0.6rem 1rem;
+    font-family: inherit;
+    z-index: 100;
+}
+
+#blazor-error-ui a, #blazor-error-ui .dismiss {
+    color: var(--ice);
+    cursor: pointer;
+    margin-left: 0.75rem;
+}

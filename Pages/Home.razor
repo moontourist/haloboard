@@ -1,0 +1,195 @@
+@page "/"
+@inject ScoreStore Store
+@implements IDisposable
+
+<PageTitle>OUTING LEADERBOARD</PageTitle>
+
+<div class="crt">
+    <pre class="banner">@_banner</pre>
+    <pre class="subtitle">:: @_eventName ::   SMASH +1 | PICKLEBALL +1 | MAGIC (COMMANDER) +3</pre>
+
+    @if (_rows.Count > 0)
+    {
+        <div class="champion">
+            <pre class="halo-ring">@_haloArt</pre>
+            <pre class="champion-name">@_championLine</pre>
+        </div>
+
+        <div class="board">
+            <pre class="table-line frame">@_frameLine</pre>
+            <pre class="table-line header">@_headerLine</pre>
+            <pre class="table-line frame">@_frameLine</pre>
+            @foreach (var row in _rows)
+            {
+                <pre @key="row.Key" class="table-line row @(row.Rank == 1 ? "leader" : "")">@RenderRow(row)</pre>
+            }
+            <pre class="table-line frame">@_frameLine</pre>
+        </div>
+    }
+
+    <pre class="status"><span class="live">[LIVE]</span> LAST SYNC @_lastSync :: POLLING EVERY @(PollSeconds)s :: MAGIC PAYS 3 (YOU BEAT THREE PEOPLE) :: HALO TERMINAL <span class="cursor">█</span></pre>
+    <a class="admin-link" href="admin">[ ADMIN CONSOLE ]</a>
+</div>
+
+@code {
+    private const int PollSeconds = 5;
+    private const int NameWidth = 14;
+    private const int BarWidth = 20;
+
+    private sealed class Row
+    {
+        public string Name = "";
+        public int Rank;
+        public int Smash;
+        public int Magic;
+        public int Pickle;
+        public int Points;
+        // rank is part of the key so a rank change recreates the element and replays the row-in animation
+        public string Key => $"{Name}#{Rank}";
+    }
+
+    private string _banner = "";
+    private string _eventName = "CONNECTING...";
+    private string _championLine = "";
+    private string _frameLine = "";
+    private string _headerLine = "";
+    private string _lastSync = "--:--:--";
+    private List<Row> _rows = new();
+    private readonly Dictionary<string, int> _shownPoints = new();
+    private readonly CancellationTokenSource _cts = new();
+    private bool _animating;
+
+    // the champion doesn't get a crown, they get a halo
+    private static readonly string _haloArt = string.Join("\n",
+        "  .-~~~~~~~~~-.",
+        " (=============)",
+        "  `-._______.-'");
+
+    private static readonly Dictionary<char, string[]> Figlet = new()
+    {
+        ['L'] = new[] { " _     ", "| |    ", "| |    ", "| |___ ", "|_____|" },
+        ['E'] = new[] { " _____ ", "| ____|", "|  _|  ", "| |___ ", "|_____|" },
+        ['A'] = new[] { "    _    ", "   / \\   ", "  / _ \\  ", " / ___ \\ ", "/_/   \\_\\" },
+        ['D'] = new[] { " ____  ", "|  _ \\ ", "| | | |", "| |_| |", "|____/ " },
+        ['R'] = new[] { " ____  ", "|  _ \\ ", "| |_) |", "|  _ < ", "|_| \\_\\" },
+        ['B'] = new[] { " ____  ", "| __ ) ", "|  _ \\ ", "| |_) |", "|____/ " },
+        ['O'] = new[] { "  ___  ", " / _ \\ ", "| | | |", "| |_| |", " \\___/ " },
+    };
+
+    protected override void OnInitialized()
+    {
+        _banner = string.Join("\n", Enumerable.Range(0, 5)
+            .Select(r => string.Concat("LEADERBOARD".Select(c => Figlet[c][r]))));
+        _frameLine = "+" + string.Join("+", new[] { 4, NameWidth + 2, 7, 7, 8, 6, BarWidth + 2 }
+            .Select(w => new string('-', w))) + "+";
+        _headerLine = FormatRowLine("#", "PLAYER", "SMASH", "MAGIC", "PICKLE", "PTS", "POWER");
+        _ = PollLoopAsync(_cts.Token);
+    }
+
+    private async Task PollLoopAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            await RefreshAsync();
+            try { await Task.Delay(PollSeconds * 1000, ct); }
+            catch (TaskCanceledException) { return; }
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        try
+        {
+            var file = await Store.LoadAsync();
+            if (file is null) return;
+
+            _eventName = file.EventName;
+            var ordered = file.Players
+                .Select(p => new Row
+                {
+                    Name = p.Name,
+                    Smash = p.SmashWins,
+                    Magic = p.MagicWins,
+                    Pickle = p.PickleballWins,
+                    Points = p.Points,
+                })
+                .OrderByDescending(r => r.Points)
+                .ThenByDescending(r => r.Smash + r.Magic + r.Pickle)
+                .ThenBy(r => r.Name)
+                .ToList();
+            foreach (var r in ordered)
+            {
+                r.Rank = 1 + ordered.Count(o => o.Points > r.Points);
+                _shownPoints.TryAdd(r.Name, 0);
+            }
+            _rows = ordered;
+            _championLine = BuildChampionLine();
+            _lastSync = DateTime.Now.ToString("HH:mm:ss");
+            StateHasChanged();
+            _ = AnimatePointsAsync();
+        }
+        catch
+        {
+            // transient fetch/parse failure: keep showing the last good board
+        }
+    }
+
+    private async Task AnimatePointsAsync()
+    {
+        if (_animating) return;
+        _animating = true;
+        try
+        {
+            while (true)
+            {
+                var moved = false;
+                foreach (var r in _rows)
+                {
+                    var shown = _shownPoints[r.Name];
+                    if (shown == r.Points) continue;
+                    _shownPoints[r.Name] = shown + Math.Sign(r.Points - shown);
+                    moved = true;
+                }
+                if (!moved) break;
+                StateHasChanged();
+                await Task.Delay(90);
+            }
+        }
+        finally
+        {
+            _animating = false;
+        }
+    }
+
+    private string BuildChampionLine()
+    {
+        var top = _rows.Where(r => r.Rank == 1).ToList();
+        if (top.Count == 0 || top[0].Points == 0)
+            return "*** THE THRONE AWAITS: NO WINS YET ***";
+        var names = string.Join(" & ", top.Select(r => r.Name.ToUpperInvariant()));
+        var title = top.Count > 1 ? "CO-CHAMPIONS" : "CHAMPION";
+        return $"*** {title}: {names} [{top[0].Points} PTS] ***";
+    }
+
+    private string RenderRow(Row r)
+    {
+        var pts = _shownPoints.GetValueOrDefault(r.Name, r.Points);
+        var max = Math.Max(1, _rows.Max(x => x.Points));
+        var barLen = pts <= 0 ? 0 : Math.Clamp((int)Math.Round(pts / (double)max * BarWidth), 1, BarWidth);
+        var bar = new string('#', barLen) + new string('.', BarWidth - barLen);
+        var name = r.Name.Length > NameWidth ? r.Name[..NameWidth] : r.Name;
+        return FormatRowLine(r.Rank.ToString(), name, r.Smash.ToString(), r.Magic.ToString(),
+            r.Pickle.ToString(), pts.ToString(), bar);
+    }
+
+    private static string FormatRowLine(string rank, string name, string smash, string magic,
+        string pickle, string pts, string bar)
+        => string.Format("| {0,2} | {1,-14} | {2,5} | {3,5} | {4,6} | {5,4} | {6,-20} |",
+            rank, name, smash, magic, pickle, pts, bar);
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}
