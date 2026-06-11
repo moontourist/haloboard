@@ -133,6 +133,21 @@ pre {
     line-height: 1.2;
     letter-spacing: 0;
     text-align: left;
+    /* glow follows the composite shape; the crown itself stays stationary */
+    filter: drop-shadow(0 0 5px rgba(0, 162, 224, 0.7))
+            drop-shadow(0 0 16px rgba(0, 210, 196, 0.35));
+    animation: crown-glow 2.6s ease-in-out infinite;
+}
+
+@keyframes crown-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 5px rgba(0, 162, 224, 0.7))
+                drop-shadow(0 0 16px rgba(0, 210, 196, 0.35));
+    }
+    50% {
+        filter: drop-shadow(0 0 9px rgba(0, 162, 224, 0.95))
+                drop-shadow(0 0 26px rgba(0, 210, 196, 0.55));
+    }
 }
 
 .champion-name {
