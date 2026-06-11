@@ -128,10 +128,11 @@ pre {
 .halo-ring {
     display: inline-block;
     color: var(--glow);
-    text-shadow: 0 0 10px rgba(0, 162, 224, 0.9), 0 0 30px rgba(0, 162, 224, 0.5),
-                 0 0 60px rgba(0, 210, 196, 0.35);
-    font-size: clamp(9px, 1.6vw, 16px);
-    line-height: 1.15;
+    text-shadow: 0 0 6px rgba(0, 162, 224, 0.9), 0 0 18px rgba(0, 162, 224, 0.5),
+                 0 0 40px rgba(0, 210, 196, 0.35);
+    /* the logo ring is ~55 cols x 30 rows of blocks — render it tiny, like an emblem */
+    font-size: clamp(2px, 0.5vw, 5px);
+    line-height: 1;
     animation: halo-hover 2.6s ease-in-out infinite;
 }
 
