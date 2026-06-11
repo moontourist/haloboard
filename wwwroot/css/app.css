@@ -128,10 +128,11 @@ pre {
 .halo-ring {
     display: inline-block;
     color: var(--glow);
-    /* the crown is ~75 cols x 19 rows — render it small, like an emblem */
-    font-size: clamp(4px, 0.65vw, 8px);
-    line-height: 1;
+    /* render the crown like terminal text — normal line spacing, no scaling tricks */
+    font-size: clamp(5px, 0.85vw, 12px);
+    line-height: 1.2;
     letter-spacing: 0;
+    text-align: left;
 }
 
 .champion-name {
