@@ -128,11 +128,14 @@ pre {
 .halo-ring {
     display: inline-block;
     color: var(--glow);
-    text-shadow: 0 0 6px rgba(0, 162, 224, 0.9), 0 0 18px rgba(0, 162, 224, 0.5),
-                 0 0 40px rgba(0, 210, 196, 0.35);
-    /* the logo ring is ~55 cols x 30 rows of blocks — render it tiny, like an emblem */
-    font-size: clamp(2px, 0.5vw, 5px);
+    /* drop-shadow follows the rendered ring shape; text-shadow at this glyph
+       size smears glow into the hole and turns the logo into a blob */
+    filter: drop-shadow(0 0 4px rgba(0, 162, 224, 0.7))
+            drop-shadow(0 0 12px rgba(0, 210, 196, 0.3));
+    /* the logo ring is ~55 cols x 30 rows of blocks — render it small, like an emblem */
+    font-size: clamp(3px, 0.55vw, 6px);
     line-height: 1;
+    letter-spacing: 0;
     animation: halo-hover 2.6s ease-in-out infinite;
 }
 
