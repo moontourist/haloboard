@@ -1,6 +1,6 @@
 {
   "eventName": "2k26 leaderboard",
-  "updatedAt": "2026-06-11T21:47:16.353Z",
+  "updatedAt": "2026-06-11T21:59:52.653Z",
   "players": [
     {
       "name": "Matt",
@@ -34,6 +34,12 @@
     },
     {
       "name": "Cali",
+      "smashWins": 0,
+      "magicWins": 0,
+      "pickleballWins": 0
+    },
+    {
+      "name": "Ben",
       "smashWins": 0,
       "magicWins": 0,
       "pickleballWins": 0
