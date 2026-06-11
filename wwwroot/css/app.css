@@ -132,8 +132,8 @@ pre {
        size smears glow into the hole and turns the logo into a blob */
     filter: drop-shadow(0 0 4px rgba(0, 162, 224, 0.7))
             drop-shadow(0 0 12px rgba(0, 210, 196, 0.3));
-    /* the logo ring is ~55 cols x 30 rows of blocks — render it small, like an emblem */
-    font-size: clamp(3px, 0.55vw, 6px);
+    /* the logo ring is 41 cols x 22 rows — render it small, like an emblem */
+    font-size: clamp(4px, 0.65vw, 8px);
     line-height: 1;
     letter-spacing: 0;
     animation: halo-hover 2.6s ease-in-out infinite;
