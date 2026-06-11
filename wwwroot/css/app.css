@@ -128,20 +128,10 @@ pre {
 .halo-ring {
     display: inline-block;
     color: var(--glow);
-    /* drop-shadow follows the rendered ring shape; text-shadow at this glyph
-       size smears glow into the hole and turns the logo into a blob */
-    filter: drop-shadow(0 0 4px rgba(0, 162, 224, 0.7))
-            drop-shadow(0 0 12px rgba(0, 210, 196, 0.3));
     /* the crown is ~75 cols x 19 rows — render it small, like an emblem */
     font-size: clamp(4px, 0.65vw, 8px);
     line-height: 1;
     letter-spacing: 0;
-    animation: halo-hover 2.6s ease-in-out infinite;
-}
-
-@keyframes halo-hover {
-    0%, 100% { transform: translateY(0)    rotate(-2deg); opacity: 0.95; }
-    50%      { transform: translateY(-8px) rotate(2deg);  opacity: 1; }
 }
 
 .champion-name {
