@@ -1,16 +1,16 @@
 {
   "eventName": "COMPANY OUTING 2026",
-  "updatedAt": "2026-06-11T20:55:46.312Z",
+  "updatedAt": "2026-06-11T21:33:52.439Z",
   "players": [
     {
       "name": "Matt",
-      "smashWins": 3,
+      "smashWins": 0,
       "magicWins": 0,
       "pickleballWins": 0
     },
     {
       "name": "Scotty",
-      "smashWins": 4,
+      "smashWins": 0,
       "magicWins": 0,
       "pickleballWins": 0
     },
@@ -35,7 +35,7 @@
     {
       "name": "Cali",
       "smashWins": 0,
-      "magicWins": 1,
+      "magicWins": 0,
       "pickleballWins": 0
     }
   ]
