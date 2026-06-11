@@ -21,7 +21,7 @@
             <pre class="table-line frame">@_frameLine</pre>
             @foreach (var row in _rows)
             {
-                <pre @key="row.Key" class="table-line row @(row.Rank == 1 ? "leader" : "")">@RenderRow(row)</pre>
+                <pre @key="row.Key" class="table-line row @(row.Rank == 1 && row.Points > 0 ? "leader" : "")">@RenderRow(row)</pre>
             }
             <pre class="table-line frame">@_frameLine</pre>
         </div>
